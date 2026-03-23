@@ -1,38 +1,14 @@
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <netinet/in.h>
-#include <unistd.h>
+import socket
 
-int main() {
-    SSL_library_init();
-    OpenSSL_add_ssl_algorithms();
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(("0.0.0.0", 9999))
 
-    SSL_CTX *ctx = SSL_CTX_new(DTLS_server_method());
+while True:
+    data, addr = sock.recvfrom(1024)
+    message = data.decode()
+    print(f"Received from {addr}: {message}")
 
-    SSL_CTX_use_certificate_file(ctx, "server.crt", SSL_FILETYPE_PEM);
-    SSL_CTX_use_PrivateKey_file(ctx, "server.key", SSL_FILETYPE_PEM);
-
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-
-    struct sockaddr_in addr;
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(4444);
-    addr.sin_addr.s_addr = INADDR_ANY;
-
-    bind(sock, (struct sockaddr*)&addr, sizeof(addr));
-
-    SSL *ssl = SSL_new(ctx);
-    SSL_set_fd(ssl, sock);
-
-    printf("Waiting for client...\n");
-
-    SSL_accept(ssl);  // DTLS handshake
-
-    char buf[1024];
-    SSL_read(ssl, buf, sizeof(buf));
-    printf("Received: %s\n", buf);
-
-    SSL_free(ssl);
-    close(sock);
-    SSL_CTX_free(ctx);
-}
+    # Simple threshold
+    cpu = float(message.split(",")[0].split(":")[1])
+    if cpu > 80:
+        print("ALERT: High CPU Usage!")
