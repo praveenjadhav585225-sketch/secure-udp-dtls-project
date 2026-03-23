@@ -1,29 +1,17 @@
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <arpa/inet.h>
+import socket
+import psutil
+import time
 
-int main() {
-    SSL_library_init();
+server_ip = "127.0.0.1"
+server_port = 9999
 
-    SSL_CTX *ctx = SSL_CTX_new(DTLS_client_method());
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+while True:
+    cpu = psutil.cpu_percent()
+    ram = psutil.virtual_memory().percent
 
-    struct sockaddr_in server;
-    server.sin_family = AF_INET;
-    server.sin_port = htons(4444);
-    inet_pton(AF_INET, "127.0.0.1", &server.sin_addr);
+    message = f"CPU:{cpu},RAM:{ram}"
+    sock.sendto(message.encode(), (server_ip, server_port))
 
-    connect(sock, (struct sockaddr*)&server, sizeof(server));
-
-    SSL *ssl = SSL_new(ctx);
-    SSL_set_fd(ssl, sock);
-
-    SSL_connect(ssl);
-
-    SSL_write(ssl, "Hello Secure UDP", 17);
-
-    SSL_free(ssl);
-    close(sock);
-    SSL_CTX_free(ctx);
-}
+    time.sleep(5)
